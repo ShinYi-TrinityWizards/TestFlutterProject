@@ -11,7 +11,14 @@ steps:
     persistCredentials: true
     clean: true
     fetchDepth: 0  # Ensures all branches are available
-    branch: main
+
+  - script: |
+      echo "Setting up origin..."
+      git remote set-url origin $(Build.Repository.Uri)
+      git fetch --unshallow
+      git fetch origin main
+      git checkout main
+    displayName: 'Set up origin'
 
   - task: UsePythonVersion@0  # Ensure Python is installed
     inputs:
