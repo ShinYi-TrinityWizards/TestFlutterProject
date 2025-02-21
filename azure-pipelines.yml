@@ -1,50 +1,18 @@
 trigger:
   branches:
     include:
-      - main  # Ensure the pipeline triggers on main branch
+      - main
 
 pool:
-  vmImage: 'macOS-latest'  # Use macOS for Flutter iOS tests
+  vmImage: 'ubuntu-latest'
 
 steps:
-  - checkout: self
-    persistCredentials: true
-    clean: true
-    fetchDepth: 0  # Ensures all branches are available
+- task: UseFlutter@1
+  inputs:
+    version: 'latest-stable'
 
-  - script: |
-      echo "Setting up origin..."
-      git remote set-url origin $(Build.Repository.Uri)
-      git fetch --unshallow
-      git fetch origin main
-      git checkout main
-    displayName: 'Set up origin'
+- script: flutter pub get
+  displayName: 'Get dependencies'
 
-  - task: UsePythonVersion@0  # Ensure Python is installed
-    inputs:
-      versionSpec: '3.x'
-      addToPath: true
-
-  - script: |
-      echo "Installing Flutter..."
-      git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter
-      echo "##vso[task.prependpath]$(pwd)/flutter/bin"
-      export PATH="$PATH:$(pwd)/flutter/bin"
-      flutter doctor
-    displayName: 'Install Flutter'
-
-  - script: |
-      echo "Verifying Flutter Installation..."
-      which flutter  # Checks if Flutter is available
-      flutter --version
-    displayName: 'Verify Flutter'
-
-  - script: |
-      echo "Fetching Flutter dependencies..."
-      flutter pub get
-    displayName: 'Install dependencies'
-
-  - script: |
-      echo "Running Flutter integration tests..."
-      flutter test integration_test
-    displayName: 'Run integration tests'
+- script: flutter test integration_test
+  displayName: 'Run integration tests'
