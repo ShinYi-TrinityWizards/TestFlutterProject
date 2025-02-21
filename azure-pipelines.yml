@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-      - main  # Runs the pipeline when code is pushed to 'main'
+      - main  # Ensure the pipeline triggers on main branch
 
 pool:
   vmImage: 'macOS-latest'  # Use macOS for Flutter iOS tests
@@ -11,6 +11,7 @@ steps:
     persistCredentials: true
     clean: true
     fetchDepth: 0  # Ensures all branches are available
+    ref: main  # Explicitly set the correct branch
 
   - task: UsePythonVersion@0  # Ensure Python is installed
     inputs:
