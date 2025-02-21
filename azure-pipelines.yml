@@ -11,6 +11,7 @@ steps:
     persistCredentials: true
     clean: true
     fetchDepth: 0  # Ensures all branches are available
+    branch: main
 
   - task: UsePythonVersion@0  # Ensure Python is installed
     inputs:
