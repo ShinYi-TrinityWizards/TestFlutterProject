@@ -1,0 +1,32 @@
+trigger:
+  branches:
+    include:
+      - main  # Runs the pipeline when code is pushed to 'main'
+
+pool:
+  vmImage: 'macOS-latest'  # Use macOS for Flutter iOS tests
+
+steps:
+  - task: UsePythonVersion@0  # Ensure Python is installed
+    inputs:
+      versionSpec: '3.x'
+      addToPath: true
+
+  - script: |
+      echo "Installing Flutter..."
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable
+      echo "Adding Flutter to PATH..."
+      echo "$(pwd)/flutter/bin" >> $GITHUB_PATH
+      export PATH="$PATH:$(pwd)/flutter/bin"
+      flutter doctor
+    displayName: 'Install Flutter'
+
+  - script: |
+      echo "Fetching Flutter dependencies..."
+      flutter pub get
+    displayName: 'Install dependencies'
+
+  - script: |
+      echo "Running Flutter integration tests..."
+      flutter test integration_test
+    displayName: 'Run integration tests'
