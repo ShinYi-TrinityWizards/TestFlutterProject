@@ -1,12 +1,17 @@
 trigger:
   branches:
     include:
-      - main  # Runs the pipeline when code is pushed to 'main'
+      - main  # Runs the pipeline on main branch commits
 
 pool:
   vmImage: 'macOS-latest'  # Use macOS for Flutter iOS tests
 
 steps:
+  - checkout: self
+    persistCredentials: true
+    clean: true
+    fetchDepth: 0  # Ensures all branches are available
+
   - task: UsePythonVersion@0  # Ensure Python is installed
     inputs:
       versionSpec: '3.x'
@@ -14,10 +19,9 @@ steps:
 
   - script: |
       echo "Installing Flutter..."
-      git clone https://github.com/flutter/flutter.git --depth 1 -b stable
+      git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter
       echo "Adding Flutter to PATH..."
-      echo "$(pwd)/flutter/bin" >> $GITHUB_PATH
-      export PATH="$PATH:$(pwd)/flutter/bin"
+      echo "##vso[task.prependpath]$(pwd)/flutter/bin"
       flutter doctor
     displayName: 'Install Flutter'
 
