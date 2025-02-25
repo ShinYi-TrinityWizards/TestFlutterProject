@@ -25,15 +25,18 @@ jobs:
     displayName: 'Verify Flutter Installation'
 
   - script: |
-      cd $(Build.SourcesDirectory)/myflutterapp
-      ls -la  # Debugging step to verify files
+      cd myflutterapp  # Ensure we're in the correct project directory
       flutter pub get
     displayName: 'Install Dependencies'
 
-  - script: flutter analyze
+  - script: |
+      cd myflutterapp
+      flutter analyze
     displayName: 'Run Flutter Analyze'
 
-  - script: flutter test test/ --machine > test-results.json
+  - script: |
+      cd myflutterapp
+      flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
   - script: |
@@ -48,10 +51,13 @@ jobs:
       adb devices
     displayName: 'Start Android Emulator'
 
-  - script: flutter test integration_test/ --machine > integration-test-results.json
+  - script: |
+      cd myflutterapp
+      flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run Android Integration Tests'
 
   - script: |
+      cd myflutterapp
       dart pub global activate junitreport
       cat test-results.json | tojunit > test-results.xml
       cat integration-test-results.json | tojunit > integration-test-results.xml
@@ -59,14 +65,14 @@ jobs:
 
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: '**/test-results.xml'
+      testResultsFiles: 'myflutterapp/**/test-results.xml'
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish Android Test Results'
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: 'test-results.xml'
+      pathToPublish: 'myflutterapp/test-results.xml'
       artifactName: 'android-test-results'
     displayName: 'Upload Android Test Results Artifact'
 
@@ -92,15 +98,18 @@ jobs:
     displayName: 'Verify Flutter Installation'
 
   - script: |
-      cd $(Build.SourcesDirectory)/myflutterapp
-      ls -la  # Debugging step to verify files
+      cd myflutterapp
       flutter pub get
     displayName: 'Install Dependencies'
 
-  - script: flutter analyze
+  - script: |
+      cd myflutterapp
+      flutter analyze
     displayName: 'Run Flutter Analyze'
 
-  - script: flutter test test/ --machine > test-results.json
+  - script: |
+      cd myflutterapp
+      flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
   - script: |
@@ -109,10 +118,13 @@ jobs:
       xcrun simctl list devices
     displayName: 'Start iOS Simulator'
 
-  - script: flutter test integration_test/ --machine > integration-test-results.json
+  - script: |
+      cd myflutterapp
+      flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run iOS Integration Tests'
 
   - script: |
+      cd myflutterapp
       dart pub global activate junitreport
       cat test-results.json | tojunit > test-results.xml
       cat integration-test-results.json | tojunit > integration-test-results.xml
@@ -120,13 +132,13 @@ jobs:
 
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: '**/test-results.xml'
+      testResultsFiles: 'myflutterapp/**/test-results.xml'
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish iOS Test Results'
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: 'test-results.xml'
+      pathToPublish: 'myflutterapp/test-results.xml'
       artifactName: 'ios-test-results'
     displayName: 'Upload iOS Test Results Artifact'
