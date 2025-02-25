@@ -6,7 +6,7 @@ trigger:
 jobs:
 - job: Android_Testing
   pool:
-    vmImage: 'ubuntu-latest'  # Linux for Android tests
+    vmImage: 'ubuntu-latest'
 
   steps:
   - script: |
@@ -25,7 +25,7 @@ jobs:
   - script: flutter analyze
     displayName: 'Run Flutter Analyze'
 
-  - script: flutter test test/
+  - script: flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
   - script: |
@@ -40,13 +40,32 @@ jobs:
       adb devices
     displayName: 'Start Android Emulator'
 
-  - script: flutter test integration_test/
+  - script: flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run Android Integration Tests'
+
+  - script: |
+      dart pub global activate junitreport
+      cat test-results.json | tojunit > test-results.xml
+      cat integration-test-results.json | tojunit > integration-test-results.xml
+    displayName: 'Convert Test Results to JUnit Format'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testResultsFormat: 'JUnit'
+      mergeTestResults: true
+    displayName: 'Publish Android Test Results'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'test-results.xml'
+      artifactName: 'android-test-results'
+    displayName: 'Upload Android Test Results Artifact'
 
 - job: iOS_Testing
   pool:
-    vmImage: 'macOS-latest'  # macOS required for iOS tests
-  dependsOn: Android_Testing  # Run iOS tests only after Android tests
+    vmImage: 'macOS-latest'
+  dependsOn: Android_Testing
 
   steps:
   - script: |
@@ -65,7 +84,7 @@ jobs:
   - script: flutter analyze
     displayName: 'Run Flutter Analyze'
 
-  - script: flutter test test/
+  - script: flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
   - script: |
@@ -74,5 +93,24 @@ jobs:
       xcrun simctl list devices
     displayName: 'Start iOS Simulator'
 
-  - script: flutter test integration_test/
+  - script: flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run iOS Integration Tests'
+
+  - script: |
+      dart pub global activate junitreport
+      cat test-results.json | tojunit > test-results.xml
+      cat integration-test-results.json | tojunit > integration-test-results.xml
+    displayName: 'Convert Test Results to JUnit Format'
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '**/test-results.xml'
+      testResultsFormat: 'JUnit'
+      mergeTestResults: true
+    displayName: 'Publish iOS Test Results'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'test-results.xml'
+      artifactName: 'ios-test-results'
+    displayName: 'Upload iOS Test Results Artifact'
