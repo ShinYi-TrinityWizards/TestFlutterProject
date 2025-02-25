@@ -25,7 +25,7 @@ jobs:
     displayName: 'Verify Flutter Installation'
 
   - script: |
-      cd $(Build.SourcesDirectory)
+      cd $(Build.SourcesDirectory)/myflutterapp
       ls -la  # Debugging step to verify files
       flutter pub get
     displayName: 'Install Dependencies'
@@ -92,7 +92,7 @@ jobs:
     displayName: 'Verify Flutter Installation'
 
   - script: |
-      cd $(Build.SourcesDirectory)
+      cd $(Build.SourcesDirectory)/myflutterapp
       ls -la  # Debugging step to verify files
       flutter pub get
     displayName: 'Install Dependencies'
