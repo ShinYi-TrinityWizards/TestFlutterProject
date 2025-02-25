@@ -20,8 +20,8 @@ jobs:
       echo "##vso[task.setvariable variable=FLUTTER_HOME]$FLUTTER_HOME"
       echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
       cd flutter
-      git fetch --prune --unshallow
-      git reset --hard origin/stable
+      git fetch --unshallow
+      git pull origin stable
       flutter doctor
       flutter --version
     displayName: 'Install Flutter (Stable) & Verify'
@@ -94,8 +94,8 @@ jobs:
       echo "##vso[task.setvariable variable=FLUTTER_HOME]$FLUTTER_HOME"
       echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
       cd flutter
-      git fetch --prune --unshallow
-      git reset --hard origin/stable
+      git fetch --unshallow
+      git pull origin stable
       flutter doctor
       flutter --version
     displayName: 'Install Flutter (Stable) & Verify'
