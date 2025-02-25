@@ -9,19 +9,23 @@ jobs:
     vmImage: 'ubuntu-latest'
 
   steps:
+  - checkout: self
+    displayName: 'Checkout Repository'
+
   - script: |
       echo "Installing the latest Flutter version..."
       git clone https://github.com/flutter/flutter.git --depth 1
-      export FLUTTER_HOME=$(pwd)/flutter
-      export PATH="$FLUTTER_HOME/bin:$PATH"
-      echo "##vso[task.setvariable variable=FLUTTER_HOME]$FLUTTER_HOME"
-      echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
+      echo "##vso[task.setvariable variable=FLUTTER_HOME]$(pwd)/flutter"
+      echo "$(pwd)/flutter/bin" >> $GITHUB_PATH
     displayName: 'Install Latest Flutter Version'
 
   - script: flutter doctor -v
     displayName: 'Verify Flutter Installation'
 
-  - script: flutter pub get
+  - script: |
+      cd $(Build.SourcesDirectory)
+      ls -la  # Debugging step to verify files
+      flutter pub get
     displayName: 'Install Dependencies'
 
   - script: flutter analyze
@@ -53,7 +57,7 @@ jobs:
 
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: '**/*.xml'
+      testResultsFiles: '**/test-results.xml'
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish Android Test Results'
@@ -70,19 +74,23 @@ jobs:
   dependsOn: Android_Testing
 
   steps:
+  - checkout: self
+    displayName: 'Checkout Repository'
+
   - script: |
       echo "Installing the latest Flutter version..."
       git clone https://github.com/flutter/flutter.git --depth 1
-      export FLUTTER_HOME=$(pwd)/flutter
-      export PATH="$FLUTTER_HOME/bin:$PATH"
-      echo "##vso[task.setvariable variable=FLUTTER_HOME]$FLUTTER_HOME"
-      echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
+      echo "##vso[task.setvariable variable=FLUTTER_HOME]$(pwd)/flutter"
+      echo "$(pwd)/flutter/bin" >> $GITHUB_PATH
     displayName: 'Install Latest Flutter Version'
 
   - script: flutter doctor -v
     displayName: 'Verify Flutter Installation'
 
-  - script: flutter pub get
+  - script: |
+      cd $(Build.SourcesDirectory)
+      ls -la  # Debugging step to verify files
+      flutter pub get
     displayName: 'Install Dependencies'
 
   - script: flutter analyze
@@ -108,7 +116,7 @@ jobs:
 
   - task: PublishTestResults@2
     inputs:
-      testResultsFiles: '**/*.xml'
+      testResultsFiles: '**/test-results.xml'
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish iOS Test Results'
