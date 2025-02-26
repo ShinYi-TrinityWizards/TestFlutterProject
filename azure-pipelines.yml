@@ -12,49 +12,79 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
+  # Install Flutter
   - script: |
       git clone https://github.com/flutter/flutter.git -b stable
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
+  # Set up Android SDK
+  - script: |
+      echo "Setting up Android SDK..."
+      mkdir -p $ANDROID_HOME
+      wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O android-sdk.zip
+      unzip android-sdk.zip -d $ANDROID_HOME
+      rm android-sdk.zip
+      yes | $ANDROID_HOME/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --install "platform-tools" "platforms;android-30" "build-tools;30.0.3" "emulator" "system-images;android-30;google_apis;x86"
+      echo "##vso[task.prependpath]$ANDROID_HOME/platform-tools"
+      echo "##vso[task.prependpath]$ANDROID_HOME/emulator"
+    displayName: 'Install Android SDK and Tools'
+
+  # Verify Android SDK installation
+  - script: |
+      echo "ANDROID_HOME: $ANDROID_HOME"
+      adb --version
+      emulator -version
+    displayName: 'Verify Android SDK Installation'
+
+  # Install Flutter dependencies
   - script: |
       cd myflutterapp  # Ensure correct project directory
       flutter pub get
     displayName: 'Install Dependencies'
 
+  # Run Flutter Analyze
   - script: |
       cd myflutterapp
       flutter analyze
     displayName: 'Run Flutter Analyze'
 
+  # Run Widget Tests
   - script: |
       cd myflutterapp
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
+  # Install dependencies for the emulator
   - script: |
       sudo apt-get update -y
       sudo apt-get install -y libglu1-mesa
     displayName: 'Install Dependencies for Emulator'
 
+  # Create and start Android Emulator
   - script: |
+      echo "Creating Android Emulator..."
+      echo "no" | $ANDROID_HOME/cmdline-tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
       echo "Starting Android Emulator..."
       $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot &
       adb wait-for-device
       adb devices
     displayName: 'Start Android Emulator'
 
+  # Run Android Integration Tests
   - script: |
       cd myflutterapp
       flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run Android Integration Tests'
 
+  # Convert Test Results to JUnit Format
   - script: |
       dart pub global activate junitreport
       cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
       cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
     displayName: 'Convert Test Results to JUnit Format'
 
+  # Publish Android Test Results
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-results.xml'
@@ -62,6 +92,7 @@ jobs:
       mergeTestResults: true
     displayName: 'Publish Android Test Results'
 
+  # Upload Android Test Results Artifact
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: 'myflutterapp/test-results.xml'
@@ -77,43 +108,51 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
+  # Install Flutter
   - script: |
       git clone https://github.com/flutter/flutter.git -b stable
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
+  # Install Flutter dependencies
   - script: |
       cd myflutterapp
       flutter pub get
     displayName: 'Install Dependencies'
 
+  # Run Flutter Analyze
   - script: |
       cd myflutterapp
       flutter analyze
     displayName: 'Run Flutter Analyze'
 
+  # Run Widget Tests
   - script: |
       cd myflutterapp
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
+  # Start iOS Simulator
   - script: |
       echo "Starting iOS Simulator..."
       xcrun simctl boot "iPhone 14"
       xcrun simctl list devices
     displayName: 'Start iOS Simulator'
 
+  # Run iOS Integration Tests
   - script: |
       cd myflutterapp
       flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run iOS Integration Tests'
 
+  # Convert Test Results to JUnit Format
   - script: |
       dart pub global activate junitreport
       cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
       cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
     displayName: 'Convert Test Results to JUnit Format'
 
+  # Publish iOS Test Results
   - task: PublishTestResults@2
     inputs:
       testResultsFiles: '**/test-results.xml'
@@ -121,6 +160,7 @@ jobs:
       mergeTestResults: true
     displayName: 'Publish iOS Test Results'
 
+  # Upload iOS Test Results Artifact
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: 'myflutterapp/test-results.xml'
