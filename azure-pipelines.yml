@@ -30,6 +30,12 @@ jobs:
       echo "##vso[task.prependpath]$ANDROID_HOME/emulator"
     displayName: 'Install Android SDK and Tools'
 
+  # Install missing dependencies for the Android Emulator
+  - script: |
+      sudo apt-get update -y
+      sudo apt-get install -y libglu1-mesa libpulse0 libxcb-xinerama0
+    displayName: 'Install Dependencies for Emulator'
+
   # Verify Android SDK installation
   - script: |
       echo "ANDROID_HOME: $ANDROID_HOME"
@@ -54,12 +60,6 @@ jobs:
       cd myflutterapp
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
-
-  # Install missing dependencies for the Android Emulator
-  - script: |
-      sudo apt-get update -y
-      sudo apt-get install -y libglu1-mesa libpulse0  # Fix: Added libpulse0
-    displayName: 'Install Dependencies for Emulator'
 
   # Create and start Android Emulator
   - script: |
