@@ -64,23 +64,12 @@ jobs:
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
-  # Create and Start Android Emulator (Optimized)
   - script: |
-      echo "Creating Android Emulator..."
-      export ANDROID_SDK_ROOT=$ANDROID_HOME
-      export ANDROID_AVD_HOME=$HOME/.android/avd
-      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis_playstore;x86_64" -d pixel
-
-      echo "Starting ADB Server..."
-      adb start-server
-
-      echo "Starting Android Emulator..."
-      nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect -no-snapshot-load -partition-size 2048 -qemu > /dev/null 2>&1 &
-
-      echo "Waiting for emulator to fully boot..."
-      $ANDROID_HOME/platform-tools/adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done;'
-      adb devices
-    displayName: 'Start Android Emulator (Optimized)'
+      echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install "system-images;android-30;google_apis;x86"
+      echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
+      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window &
+      $ANDROID_HOME/platform-tools/adb wait-for-device
+    displayName: 'Start Android Emulator'
 
   # Run Android Integration Tests
   - script: |
