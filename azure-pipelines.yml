@@ -13,24 +13,27 @@ jobs:
     displayName: 'Checkout Repository'
 
   - script: |
-      echo "Installing Flutter (Latest Version)..."
+      echo "Installing Flutter (Latest Stable Version)..."
 
       # Clone the latest stable version of Flutter
       git clone https://github.com/flutter/flutter.git --branch stable --depth 1 ~/flutter
 
       # Add Flutter to PATH
-      export PATH="$PATH:$HOME/flutter/bin"
+      export PATH="$HOME/flutter/bin:$PATH"
       echo "##vso[task.setvariable variable=FLUTTER_HOME]$HOME/flutter"
       echo "##vso[task.setvariable variable=PATH]$HOME/flutter/bin:$PATH"
 
       # Verify installation
-      ~/flutter/bin/flutter --version || { echo "Flutter installation failed"; exit 1; }
+      if ! ~/flutter/bin/flutter --version; then
+        echo "Flutter installation failed"
+        exit 1
+      fi
 
       # Debugging info
       echo "Flutter SDK installed at: $HOME/flutter"
       echo "Current PATH: $PATH"
 
-      # Run Flutter Doctor
+      # Run Flutter Doctor to check setup
       flutter doctor
     displayName: 'Install Latest Flutter'
 
