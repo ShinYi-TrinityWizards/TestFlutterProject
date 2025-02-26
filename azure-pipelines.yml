@@ -55,10 +55,10 @@ jobs:
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
-  # Install dependencies for the emulator
+  # Install missing dependencies for the Android Emulator
   - script: |
       sudo apt-get update -y
-      sudo apt-get install -y libglu1-mesa
+      sudo apt-get install -y libglu1-mesa libpulse0  # Fix: Added libpulse0
     displayName: 'Install Dependencies for Emulator'
 
   # Create and start Android Emulator
