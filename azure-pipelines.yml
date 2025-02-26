@@ -21,7 +21,7 @@ jobs:
       echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
       cd flutter
       git fetch --all
-      git pull origin stable
+      git checkout stable
       flutter doctor
       flutter --version
     displayName: 'Install Flutter (Stable) & Verify'
