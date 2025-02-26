@@ -13,18 +13,26 @@ jobs:
     displayName: 'Checkout Repository'
 
   - script: |
-      echo "Installing Flutter (Stable)..."
-      git clone https://github.com/flutter/flutter.git --branch stable --depth 1
-      export FLUTTER_HOME=$(pwd)/flutter
-      export PATH="$FLUTTER_HOME/bin:$PATH"
-      echo "##vso[task.setvariable variable=FLUTTER_HOME]$FLUTTER_HOME"
-      echo "##vso[task.setvariable variable=PATH]$FLUTTER_HOME/bin:$PATH"
-      cd flutter
-      git fetch --unshallow
-      git pull origin stable
+      echo "Installing Flutter (Latest Version)..."
+
+      # Clone the latest stable version of Flutter
+      git clone https://github.com/flutter/flutter.git --branch stable --depth 1 ~/flutter
+
+      # Add Flutter to PATH
+      export PATH="$PATH:$HOME/flutter/bin"
+      echo "##vso[task.setvariable variable=FLUTTER_HOME]$HOME/flutter"
+      echo "##vso[task.setvariable variable=PATH]$HOME/flutter/bin:$PATH"
+
+      # Verify installation
+      ~/flutter/bin/flutter --version || { echo "Flutter installation failed"; exit 1; }
+
+      # Debugging info
+      echo "Flutter SDK installed at: $HOME/flutter"
+      echo "Current PATH: $PATH"
+
+      # Run Flutter Doctor
       flutter doctor
-      flutter --version
-    displayName: 'Install Flutter (Stable) & Verify'
+    displayName: 'Install Latest Flutter'
 
   - script: |
       cd myflutterapp  # Ensure correct project directory
