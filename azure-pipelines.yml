@@ -142,6 +142,59 @@ jobs:
       artifactName: 'android-test-results'
     displayName: 'Upload Android Test Results Artifact'
 
+- job: iOS_Testing
+  pool:
+    vmImage: 'macOS-latest'
+  dependsOn: Android_Testing
+
+  steps:
+  - checkout: self
+    displayName: 'Checkout Repository'
+
+  # Install Flutter
+  - script: |
+      git clone https://github.com/flutter/flutter.git -b stable
+      echo "##vso[task.prependpath]$PWD/flutter/bin"
+    displayName: 'Install Flutter'
+
+  # Install Flutter dependencies
+  - script: |
+      cd myflutterapp
+      flutter pub get
+    displayName: 'Install Dependencies'
+
+  # Run Flutter Analyze
+  - script: |
+      cd myflutterapp
+      flutter analyze
+    displayName: 'Run Flutter Analyze'
+
+  # Run Widget Tests
+  - script: |
+      cd myflutterapp
+      flutter test test/ --machine > test-results.json
+    displayName: 'Run Widget Tests'
+
+  # Start iOS Simulator
+  - script: |
+      echo "Starting iOS Simulator..."
+      xcrun simctl boot "iPhone 14"
+      xcrun simctl list devices
+    displayName: 'Start iOS Simulator'
+
+  # Run iOS Integration Tests
+  - script: |
+      cd myflutterapp
+      flutter test integration_test/ --machine > integration-test-results.json
+    displayName: 'Run iOS Integration Tests'
+
+  # Convert Test Results to JUnit Format
+  - script: |
+      dart pub global activate junitreport
+      cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
+      cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
+    displayName: 'Convert Test Results to JUnit Format'
+
   # Publish iOS Test Results
   - task: PublishTestResults@2
     inputs:
