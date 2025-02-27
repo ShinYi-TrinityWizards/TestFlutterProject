@@ -46,9 +46,20 @@ jobs:
 
   # Install Android Emulator and System Images
   - script: |
-      echo "Installing Android Emulator and System Images..."
+      echo "Installing JAXB dependencies..."
       export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
+      
+      # Install missing JAXB dependencies for Java 11
+      mkdir -p $HOME/jaxb-libs
+      curl -L -o $HOME/jaxb-libs/jaxb-api.jar https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar
+      curl -L -o $HOME/jaxb-libs/jaxb-core.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-core/2.3.0.1/jaxb-core-2.3.0.1.jar
+      curl -L -o $HOME/jaxb-libs/jaxb-impl.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.1/jaxb-impl-2.3.1.jar
+
+      export CLASSPATH=$HOME/jaxb-libs/jaxb-api.jar:$HOME/jaxb-libs/jaxb-core.jar:$HOME/jaxb-libs/jaxb-impl.jar:$CLASSPATH
+      echo "JAXB dependencies installed."
+
+      echo "Installing Android Emulator and System Images..."
       yes | $ANDROID_HOME/tools/bin/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
     displayName: 'Install Android Emulator and System Images'
 
