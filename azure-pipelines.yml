@@ -12,16 +12,22 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
-  # Install Java 17
+  # Install Java 11
   - script: |
-      echo "Installing Java 17..."
+      echo "Installing Java 11..."
       brew tap homebrew/cask-versions
-      brew install --cask temurin17
-      export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+      brew install --cask temurin11
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "JAVA_HOME is set to: $JAVA_HOME"
       java -version
-    displayName: 'Install Java 17'
+    displayName: 'Install Java 11'
+
+  # Verify Java Version
+  - script: |
+      echo "Verifying Java version..."
+      java -version
+    displayName: 'Verify Java Version'
 
   # Install Flutter
   - script: |
@@ -29,90 +35,88 @@ jobs:
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
-  # Install Android Emulator and System Images
+  # Install JAXB dependencies for Java 11+
   - script: |
-      echo "🔹 Setting up Java 17..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+      echo "Installing JAXB dependencies..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
-      java -version  # Verify Java version
-
-      echo "🔹 Installing JAXB dependencies..."
+      
       mkdir -p $HOME/jaxb-libs
       curl -L -o $HOME/jaxb-libs/jaxb-api.jar https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar
       curl -L -o $HOME/jaxb-libs/jaxb-core.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-core/2.3.0.1/jaxb-core-2.3.0.1.jar
       curl -L -o $HOME/jaxb-libs/jaxb-impl.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.1/jaxb-impl-2.3.1.jar
       curl -L -o $HOME/jaxb-libs/activation.jar https://repo1.maven.org/maven2/com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.jar
-      echo "✅ JAXB dependencies installed."
+      
+      export CLASSPATH="$HOME/jaxb-libs/jaxb-api.jar:$HOME/jaxb-libs/jaxb-core.jar:$HOME/jaxb-libs/jaxb-impl.jar:$HOME/jaxb-libs/activation.jar"
+      echo "JAXB dependencies installed."
+    displayName: 'Install JAXB Dependencies'
 
-      echo "🔹 Checking Android SDK location..."
+  # Install Android Emulator and System Images
+  - script: |
+      echo "Setting up Android SDK..."
       export ANDROID_SDK_ROOT=$HOME/Library/Android/sdk
       export ANDROID_HOME=$ANDROID_SDK_ROOT
       export CMDLINE_TOOLS=$ANDROID_HOME/cmdline-tools/latest/bin
       echo "ANDROID_SDK_ROOT is set to: $ANDROID_SDK_ROOT"
 
-      # Ensure sdkmanager is installed
+      # Install SDK command-line tools if missing
       if [ ! -f "$CMDLINE_TOOLS/sdkmanager" ]; then
-          echo "⚠️ sdkmanager not found! Installing SDK Command-line tools..."
+          echo "Installing Android SDK Command-line tools..."
           mkdir -p $ANDROID_HOME/cmdline-tools
           curl -o commandlinetools-mac.zip https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip
           unzip -q commandlinetools-mac.zip -d $ANDROID_HOME/cmdline-tools
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           rm commandlinetools-mac.zip
-          echo "✅ Android SDK Command-line tools installed."
       fi
-
-      # Ensure sdkmanager is executable
       chmod +x $CMDLINE_TOOLS/sdkmanager
 
-      # Accept all SDK licenses
       yes | $CMDLINE_TOOLS/sdkmanager --licenses
-
-      # Install Android Emulator and System Images
-      echo "🔹 Installing Android Emulator and System Images..."
-      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
       
-      echo "✅ Android Emulator and System Images installed successfully!"
+      echo "Installing Android Emulator and System Images..."
+      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
+      echo "Android Emulator and System Images installed successfully!"
     displayName: 'Install Android Emulator and System Images'
-
-  # Verify Flutter installation
-  - script: flutter doctor
-    displayName: 'Run Flutter Doctor'
-
-  # Install Flutter dependencies
-  - script: |
-      cd myflutterapp
-      flutter pub get
-    displayName: 'Install Dependencies'
-
-  # Run Flutter Analyze
-  - script: |
-      cd myflutterapp
-      flutter analyze
-    displayName: 'Run Flutter Analyze'
-
-  # Run Widget Tests
-  - script: |
-      cd myflutterapp
-      flutter test test/ --machine > test-results.json
-    displayName: 'Run Widget Tests'
 
   # Create and start Android Emulator
   - script: |
       echo "Creating Android Emulator..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
-      echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
+      
+      mkdir -p $HOME/.android/avd
+      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+        -n test_emulator \
+        -k "system-images;android-30;google_apis;x86" \
+        -d pixel
+      
       echo "Starting Android Emulator..."
       $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
       adb wait-for-device
       adb devices
     displayName: 'Start Android Emulator'
 
+  # Verify Flutter installation
+  - script: flutter doctor
+    displayName: 'Run Flutter Doctor'
+
+  # Run Flutter tests
+  - script: |
+      cd myflutterapp
+      flutter test test/ --machine > test-results.json
+    displayName: 'Run Widget Tests'
+
   # Run Android Integration Tests
   - script: |
       cd myflutterapp
       flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run Android Integration Tests'
+
+  # Convert Test Results to JUnit Format
+  - script: |
+      dart pub global activate junitreport
+      cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
+      cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
+    displayName: 'Convert Test Results to JUnit Format'
 
   # Publish Android Test Results
   - task: PublishTestResults@2
@@ -121,6 +125,13 @@ jobs:
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish Android Test Results'
+
+  # Upload Android Test Results Artifact
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'myflutterapp/test-results.xml'
+      artifactName: 'android-test-results'
+    displayName: 'Upload Android Test Results Artifact'
 
 - job: iOS_Testing
   pool:
