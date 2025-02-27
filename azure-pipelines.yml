@@ -18,6 +18,10 @@ jobs:
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
+  # Verify Flutter installation
+  - script: flutter doctor
+    displayName: 'Run Flutter Doctor'
+
   # Install Flutter dependencies
   - script: |
       cd myflutterapp
@@ -30,19 +34,21 @@ jobs:
       flutter analyze
     displayName: 'Run Flutter Analyze'
 
-  # Set up Android Emulator
-  - script: |
-      echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install "system-images;android-30;google_apis;x86"
-      echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
-      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window &
-      $ANDROID_HOME/platform-tools/adb wait-for-device
-    displayName: 'Start Android Emulator'
-
   # Run Widget Tests
   - script: |
       cd myflutterapp
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
+
+  # Create and start Android Emulator
+  - script: |
+      echo "Creating Android Emulator..."
+      echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
+      echo "Starting Android Emulator..."
+      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot &
+      adb wait-for-device
+      adb devices
+    displayName: 'Start Android Emulator'
 
   # Run Android Integration Tests
   - script: |
