@@ -15,7 +15,8 @@ jobs:
   # Install Java 8
   - script: |
       echo "Installing Java 8..."
-      brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
+      brew tap homebrew/cask-versions
+      brew install --cask temurin8
       export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "JAVA_HOME is set to: $JAVA_HOME"
