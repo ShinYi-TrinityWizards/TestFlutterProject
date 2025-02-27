@@ -49,7 +49,7 @@ jobs:
       echo "Installing JAXB dependencies..."
       export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
-      
+
       # Install missing JAXB dependencies for Java 11
       mkdir -p $HOME/jaxb-libs
       curl -L -o $HOME/jaxb-libs/jaxb-api.jar https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar
@@ -58,11 +58,28 @@ jobs:
 
       echo "JAXB dependencies installed."
 
-      # Run sdkmanager with JAXB explicitly included
+      # Ensure correct sdkmanager path
+      echo "Checking Android SDK location..."
+      export ANDROID_SDK_ROOT=$HOME/Library/Android/sdk
+      export ANDROID_HOME=$ANDROID_SDK_ROOT
+      export CMDLINE_TOOLS=$ANDROID_HOME/cmdline-tools/latest/bin
+      echo "ANDROID_SDK_ROOT is set to: $ANDROID_SDK_ROOT"
+
+      # Ensure sdkmanager is installed
+      if [ ! -f "$CMDLINE_TOOLS/sdkmanager" ]; then
+          echo "sdkmanager not found, installing command-line tools..."
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          curl -o commandlinetools-mac.zip https://dl.google.com/android/repository/commandlinetools-mac-8512546_latest.zip
+          unzip -q commandlinetools-mac.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          rm commandlinetools-mac.zip
+      fi
+
+      # Install Android Emulator and system images
       echo "Installing Android Emulator and System Images..."
       java --module-path "$HOME/jaxb-libs" \
            --add-modules java.xml.bind \
-           -jar $ANDROID_HOME/tools/lib/sdkmanager.jar --install "emulator" "system-images;android-30;google_apis;x86"
+           $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
     displayName: 'Install Android Emulator and System Images'
 
   # Accept Android SDK Licenses
