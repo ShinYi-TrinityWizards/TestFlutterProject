@@ -12,10 +12,12 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
-  # Install Java 8 (if needed)
+  # Install Java 8
   - script: |
       echo "Installing Java 8..."
       brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       java -version
     displayName: 'Install Java 8'
 
@@ -24,6 +26,12 @@ jobs:
       git clone https://github.com/flutter/flutter.git -b stable
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
+
+  # Install Android Emulator and System Images
+  - script: |
+      echo "Installing Android Emulator and System Images..."
+      yes | $ANDROID_HOME/tools/bin/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
+    displayName: 'Install Android Emulator and System Images'
 
   # Verify Flutter installation
   - script: flutter doctor
