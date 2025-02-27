@@ -41,7 +41,7 @@ jobs:
       echo "SDKManager Version:"
       $ANDROID_HOME/tools/bin/sdkmanager --version
       echo "AVDManager Version:"
-      $ANDROID_HOME/tools/bin/avdmanager --version
+      $ANDROID_HOME/tools/bin/avdmanager list avd
     displayName: 'Verify Android SDK Tools'
 
   # Install Flutter dependencies
