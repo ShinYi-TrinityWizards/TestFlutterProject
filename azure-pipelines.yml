@@ -22,6 +22,21 @@ jobs:
   - script: flutter doctor
     displayName: 'Run Flutter Doctor'
 
+  # Verify Android SDK Tools
+  - script: |
+      echo "ANDROID_HOME: $ANDROID_HOME"
+      echo "Java Version:"
+      java -version
+      echo "ADB Version:"
+      adb --version
+      echo "Emulator Version:"
+      emulator -version
+      echo "SDKManager Version:"
+      $ANDROID_HOME/tools/bin/sdkmanager --version
+      echo "AVDManager Version:"
+      $ANDROID_HOME/tools/bin/avdmanager --version
+    displayName: 'Verify Android SDK Tools'
+
   # Install Flutter dependencies
   - script: |
       cd myflutterapp
