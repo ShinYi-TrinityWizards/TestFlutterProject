@@ -18,8 +18,15 @@ jobs:
       brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
       export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
+      echo "JAVA_HOME is set to: $JAVA_HOME"
       java -version
     displayName: 'Install Java 8'
+
+  # Verify Java Version
+  - script: |
+      echo "Verifying Java version..."
+      java -version
+    displayName: 'Verify Java Version'
 
   # Install Flutter
   - script: |
@@ -30,6 +37,8 @@ jobs:
   # Install Android Emulator and System Images
   - script: |
       echo "Installing Android Emulator and System Images..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       yes | $ANDROID_HOME/tools/bin/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
     displayName: 'Install Android Emulator and System Images'
 
@@ -40,6 +49,8 @@ jobs:
   # Verify Android SDK Tools
   - script: |
       echo "ANDROID_HOME: $ANDROID_HOME"
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "Java Version:"
       java -version
       echo "ADB Version:"
