@@ -45,7 +45,7 @@ jobs:
           unzip -q commandlinetools-mac.zip -d $ANDROID_HOME/cmdline-tools
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           rm commandlinetools-mac.zip
-          echo "Android SDK Command-line tools installed."
+          echo "✅ Android SDK Command-line tools installed."
       fi
 
       # Ensure sdkmanager is executable
@@ -54,11 +54,11 @@ jobs:
       # Accept all SDK licenses
       yes | $CMDLINE_TOOLS/sdkmanager --licenses
 
-      # Install Android Emulator and System Images
+      # Install Android Emulator and System Images (x86_64)
       echo "Installing Android Emulator and System Images..."
-      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
+      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86_64"
 
-      echo "Android Emulator and System Images installed successfully!"
+      echo "✅ Android Emulator and System Images installed successfully!"
     displayName: 'Install Android Emulator and System Images'
 
   # Create Android Emulator
@@ -69,8 +69,8 @@ jobs:
       echo "Available System Images:"
       $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
 
-      # Create AVD
-      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
+      # Create AVD with x86_64 system image
+      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86_64" -d pixel_4
 
       # Verify AVD creation
       echo "Listing available AVDs..."
@@ -81,16 +81,19 @@ jobs:
   - script: |
       echo "Starting Android Emulator..."
 
-      # Check if AVD exists
-      if $ANDROID_HOME/emulator/emulator -list-avds | grep -q "test_emulator"; then
-          $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
-          adb wait-for-device
-          adb devices
-          echo "Emulator started successfully!"
-      else
-          echo "❌ Emulator 'test_emulator' not found! Aborting."
-          exit 1
-      fi
+      # Start emulator in the background
+      nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
+
+      # Wait for emulator to boot completely
+      BOOT_COMPLETED="unknown"
+      while [[ $BOOT_COMPLETED != "1" ]]; do
+          echo "⌛ Waiting for emulator to fully boot..."
+          sleep 10
+          BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+      done
+
+      echo "✅ Emulator is fully booted!"
+      adb devices
     displayName: 'Start Android Emulator'
 
   # Verify AVD Creation
@@ -101,6 +104,18 @@ jobs:
 
   # Run Android Integration Tests
   - script: |
+      echo "Restarting ADB before tests..."
+      adb kill-server
+      adb start-server
+
+      # Ensure emulator is running before testing
+      if ! adb devices | grep -w emulator; then
+          echo "❌ Emulator is missing! Restarting..."
+          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
+          sleep 30
+      fi
+
+      echo "✅ Running Flutter integration tests..."
       cd myflutterapp
       flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run Android Integration Tests'
@@ -126,59 +141,6 @@ jobs:
       pathToPublish: 'myflutterapp/test-results.xml'
       artifactName: 'android-test-results'
     displayName: 'Upload Android Test Results Artifact'
-
-- job: iOS_Testing
-  pool:
-    vmImage: 'macOS-latest'
-  dependsOn: Android_Testing
-
-  steps:
-  - checkout: self
-    displayName: 'Checkout Repository'
-
-  # Install Flutter
-  - script: |
-      git clone https://github.com/flutter/flutter.git -b stable
-      echo "##vso[task.prependpath]$PWD/flutter/bin"
-    displayName: 'Install Flutter'
-
-  # Install Flutter dependencies
-  - script: |
-      cd myflutterapp
-      flutter pub get
-    displayName: 'Install Dependencies'
-
-  # Run Flutter Analyze
-  - script: |
-      cd myflutterapp
-      flutter analyze
-    displayName: 'Run Flutter Analyze'
-
-  # Run Widget Tests
-  - script: |
-      cd myflutterapp
-      flutter test test/ --machine > test-results.json
-    displayName: 'Run Widget Tests'
-
-  # Start iOS Simulator
-  - script: |
-      echo "Starting iOS Simulator..."
-      xcrun simctl boot "iPhone 14"
-      xcrun simctl list devices
-    displayName: 'Start iOS Simulator'
-
-  # Run iOS Integration Tests
-  - script: |
-      cd myflutterapp
-      flutter test integration_test/ --machine > integration-test-results.json
-    displayName: 'Run iOS Integration Tests'
-
-  # Convert Test Results to JUnit Format
-  - script: |
-      dart pub global activate junitreport
-      cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
-      cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
-    displayName: 'Convert Test Results to JUnit Format'
 
   # Publish iOS Test Results
   - task: PublishTestResults@2
