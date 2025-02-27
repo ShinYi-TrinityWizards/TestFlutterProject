@@ -12,22 +12,16 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
-  # Install Java 11
+  # Install Java 17 (Required for avdmanager and emulator)
   - script: |
-      echo "Installing Java 11..."
+      echo "Installing Java 17..."
       brew tap homebrew/cask-versions
-      brew install --cask temurin11
-      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
+      brew install --cask temurin17
+      export JAVA_HOME=$(/usr/libexec/java_home -v 17)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "JAVA_HOME is set to: $JAVA_HOME"
       java -version
-    displayName: 'Install Java 11'
-
-  # Verify Java Version
-  - script: |
-      echo "Verifying Java version..."
-      java -version
-    displayName: 'Verify Java Version'
+    displayName: 'Install and Set Java 17'
 
   # Install Flutter
   - script: |
@@ -35,75 +29,75 @@ jobs:
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
-  # Install JAXB dependencies for Java 11+
-  - script: |
-      echo "Installing JAXB dependencies..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
-      echo "##vso[task.prependpath]$JAVA_HOME/bin"
-      
-      mkdir -p $HOME/jaxb-libs
-      curl -L -o $HOME/jaxb-libs/jaxb-api.jar https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar
-      curl -L -o $HOME/jaxb-libs/jaxb-core.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-core/2.3.0.1/jaxb-core-2.3.0.1.jar
-      curl -L -o $HOME/jaxb-libs/jaxb-impl.jar https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.1/jaxb-impl-2.3.1.jar
-      curl -L -o $HOME/jaxb-libs/activation.jar https://repo1.maven.org/maven2/com/sun/activation/jakarta.activation/1.2.2/jakarta.activation-1.2.2.jar
-      
-      export CLASSPATH="$HOME/jaxb-libs/jaxb-api.jar:$HOME/jaxb-libs/jaxb-core.jar:$HOME/jaxb-libs/jaxb-impl.jar:$HOME/jaxb-libs/activation.jar"
-      echo "JAXB dependencies installed."
-    displayName: 'Install JAXB Dependencies'
-
   # Install Android Emulator and System Images
   - script: |
-      echo "Setting up Android SDK..."
+      echo "Checking Android SDK location..."
       export ANDROID_SDK_ROOT=$HOME/Library/Android/sdk
       export ANDROID_HOME=$ANDROID_SDK_ROOT
       export CMDLINE_TOOLS=$ANDROID_HOME/cmdline-tools/latest/bin
       echo "ANDROID_SDK_ROOT is set to: $ANDROID_SDK_ROOT"
 
-      # Install SDK command-line tools if missing
+      # Ensure sdkmanager is installed
       if [ ! -f "$CMDLINE_TOOLS/sdkmanager" ]; then
-          echo "Installing Android SDK Command-line tools..."
+          echo "⚠️  sdkmanager not found! Installing Android SDK Command-line tools..."
           mkdir -p $ANDROID_HOME/cmdline-tools
           curl -o commandlinetools-mac.zip https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip
           unzip -q commandlinetools-mac.zip -d $ANDROID_HOME/cmdline-tools
           mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
           rm commandlinetools-mac.zip
+          echo "Android SDK Command-line tools installed."
       fi
+
+      # Ensure sdkmanager is executable
       chmod +x $CMDLINE_TOOLS/sdkmanager
 
+      # Accept all SDK licenses
       yes | $CMDLINE_TOOLS/sdkmanager --licenses
-      
+
+      # Install Android Emulator and System Images
       echo "Installing Android Emulator and System Images..."
       $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
+
       echo "Android Emulator and System Images installed successfully!"
     displayName: 'Install Android Emulator and System Images'
 
-  # Create and start Android Emulator
+  # Create Android Emulator
   - script: |
       echo "Creating Android Emulator..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
-      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       
-      mkdir -p $HOME/.android/avd
-      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
-        -n test_emulator \
-        -k "system-images;android-30;google_apis;x86" \
-        -d pixel
-      
+      # Verify available system images
+      echo "Available System Images:"
+      $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
+
+      # Create AVD
+      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
+
+      # Verify AVD creation
+      echo "Listing available AVDs..."
+      $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager list avd
+    displayName: 'Create Android Emulator'
+
+  # Start Android Emulator (Only if it exists)
+  - script: |
       echo "Starting Android Emulator..."
-      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
-      adb wait-for-device
-      adb devices
+
+      # Check if AVD exists
+      if $ANDROID_HOME/emulator/emulator -list-avds | grep -q "test_emulator"; then
+          $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
+          adb wait-for-device
+          adb devices
+          echo "Emulator started successfully!"
+      else
+          echo "❌ Emulator 'test_emulator' not found! Aborting."
+          exit 1
+      fi
     displayName: 'Start Android Emulator'
 
-  # Verify Flutter installation
-  - script: flutter doctor
-    displayName: 'Run Flutter Doctor'
-
-  # Run Flutter tests
+  # Verify AVD Creation
   - script: |
-      cd myflutterapp
-      flutter test test/ --machine > test-results.json
-    displayName: 'Run Widget Tests'
+      echo "Listing available AVDs..."
+      $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager list avd
+    displayName: 'List AVDs'
 
   # Run Android Integration Tests
   - script: |
@@ -164,7 +158,7 @@ jobs:
   - script: |
       cd myflutterapp
       flutter test test/ --machine > test-results.json
-    displayName: 'Run Widget Tests'
+    displayName: 'Run Widget Tests
 
   # Start iOS Simulator
   - script: |
