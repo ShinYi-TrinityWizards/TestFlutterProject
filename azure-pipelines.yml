@@ -84,12 +84,20 @@ jobs:
   # Create and start Android Emulator
   - script: |
       echo "Creating Android Emulator..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
       echo "Starting Android Emulator..."
       $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot &
       adb wait-for-device
       adb devices
     displayName: 'Start Android Emulator'
+
+  # Verify AVD Creation
+  - script: |
+      echo "Listing available AVDs..."
+      $ANDROID_HOME/tools/bin/avdmanager list avd
+    displayName: 'List AVDs'
 
   # Run Android Integration Tests
   - script: |
