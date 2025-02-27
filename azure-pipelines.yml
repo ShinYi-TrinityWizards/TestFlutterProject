@@ -12,16 +12,16 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
-  # Install Java 8
+  # Install Java 11
   - script: |
-      echo "Installing Java 8..."
+      echo "Installing Java 11..."
       brew tap homebrew/cask-versions
-      brew install --cask temurin8
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      brew install --cask temurin11
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "JAVA_HOME is set to: $JAVA_HOME"
       java -version
-    displayName: 'Install Java 8'
+    displayName: 'Install Java 11'
 
   # Verify Java Version
   - script: |
@@ -35,19 +35,19 @@ jobs:
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
-  # Set JAVA_HOME to Java 8 for Android SDK commands
+  # Set JAVA_HOME to Java 11 for Android SDK commands
   - script: |
-      echo "Setting JAVA_HOME to Java 8..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "Setting JAVA_HOME to Java 11..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "JAVA_HOME is set to: $JAVA_HOME"
       java -version
-    displayName: 'Set JAVA_HOME to Java 8'
+    displayName: 'Set JAVA_HOME to Java 11'
 
   # Install Android Emulator and System Images
   - script: |
       echo "Installing Android Emulator and System Images..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       yes | $ANDROID_HOME/tools/bin/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
     displayName: 'Install Android Emulator and System Images'
@@ -55,7 +55,7 @@ jobs:
   # Accept Android SDK Licenses
   - script: |
       echo "Accepting Android SDK licenses..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
     displayName: 'Accept Android SDK Licenses'
@@ -67,7 +67,7 @@ jobs:
   # Verify Android SDK Tools
   - script: |
       echo "ANDROID_HOME: $ANDROID_HOME"
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "Java Version:"
       java -version
@@ -102,7 +102,7 @@ jobs:
   # Create and start Android Emulator
   - script: |
       echo "Creating Android Emulator..."
-      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      export JAVA_HOME=$(/usr/libexec/java_home -v 11)
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
       echo "Starting Android Emulator..."
