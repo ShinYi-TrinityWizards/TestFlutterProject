@@ -158,7 +158,7 @@ jobs:
   - script: |
       cd myflutterapp
       flutter test test/ --machine > test-results.json
-    displayName: 'Run Widget Tests
+    displayName: 'Run Widget Tests'
 
   # Start iOS Simulator
   - script: |
@@ -173,6 +173,13 @@ jobs:
       flutter test integration_test/ --machine > integration-test-results.json
     displayName: 'Run iOS Integration Tests'
 
+  # Convert Test Results to JUnit Format
+  - script: |
+      dart pub global activate junitreport
+      cat myflutterapp/test-results.json | tojunit > myflutterapp/test-results.xml
+      cat myflutterapp/integration-test-results.json | tojunit > myflutterapp/integration-test-results.xml
+    displayName: 'Convert Test Results to JUnit Format'
+
   # Publish iOS Test Results
   - task: PublishTestResults@2
     inputs:
@@ -180,3 +187,10 @@ jobs:
       testResultsFormat: 'JUnit'
       mergeTestResults: true
     displayName: 'Publish iOS Test Results'
+
+  # Upload iOS Test Results Artifact
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: 'myflutterapp/test-results.xml'
+      artifactName: 'ios-test-results'
+    displayName: 'Upload iOS Test Results Artifact'
