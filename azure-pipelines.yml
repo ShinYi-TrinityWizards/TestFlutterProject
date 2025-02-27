@@ -42,6 +42,12 @@ jobs:
       yes | $ANDROID_HOME/tools/bin/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86"
     displayName: 'Install Android Emulator and System Images'
 
+  # Accept Android SDK Licenses
+  - script: |
+      echo "Accepting Android SDK licenses..."
+      yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
+    displayName: 'Accept Android SDK Licenses'
+
   # Verify Flutter installation
   - script: flutter doctor
     displayName: 'Run Flutter Doctor'
@@ -88,7 +94,7 @@ jobs:
       echo "##vso[task.prependpath]$JAVA_HOME/bin"
       echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
       echo "Starting Android Emulator..."
-      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot &
+      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
       adb wait-for-device
       adb devices
     displayName: 'Start Android Emulator'
