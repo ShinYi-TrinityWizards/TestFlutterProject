@@ -81,26 +81,31 @@ jobs:
   - script: |
       echo "Starting Android Emulator..."
 
-      # Start emulator in the background
-      nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
+      # Fix permission issue with emulator files
+      sudo chmod -R 777 ~/.android
 
-      # Wait for emulator to boot completely
+      # Start emulator in the background with fixes
+      nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot-load -gpu swiftshader_indirect -verbose &
+
+      # Wait for emulator to boot completely (Timeout: 300s)
       BOOT_COMPLETED="unknown"
-      while [[ $BOOT_COMPLETED != "1" ]]; do
+      TIMEOUT=300
+      ELAPSED=0
+      while [[ $BOOT_COMPLETED != "1" && $ELAPSED -lt $TIMEOUT ]]; do
           echo "⌛ Waiting for emulator to fully boot..."
           sleep 10
+          ELAPSED=$((ELAPSED + 10))
           BOOT_COMPLETED=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
       done
 
-      echo "✅ Emulator is fully booted!"
-      adb devices
+      if [[ $BOOT_COMPLETED == "1" ]]; then
+          echo "✅ Emulator is fully booted!"
+          adb devices
+      else
+          echo "❌ Emulator failed to boot within timeout ($TIMEOUT seconds)"
+          exit 1
+      fi
     displayName: 'Start Android Emulator'
-
-  # Verify AVD Creation
-  - script: |
-      echo "Listing available AVDs..."
-      $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager list avd
-    displayName: 'List AVDs'
 
   # Run Android Integration Tests
   - script: |
@@ -111,7 +116,7 @@ jobs:
       # Ensure emulator is running before testing
       if ! adb devices | grep -w emulator; then
           echo "❌ Emulator is missing! Restarting..."
-          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot -no-metrics &
+          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot-load -gpu swiftshader_indirect -verbose &
           sleep 30
       fi
 
