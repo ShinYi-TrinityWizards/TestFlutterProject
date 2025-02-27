@@ -12,6 +12,13 @@ jobs:
   - checkout: self
     displayName: 'Checkout Repository'
 
+  # Install Java 8 (if needed)
+  - script: |
+      echo "Installing Java 8..."
+      brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
+      java -version
+    displayName: 'Install Java 8'
+
   # Install Flutter
   - script: |
       git clone https://github.com/flutter/flutter.git -b stable
