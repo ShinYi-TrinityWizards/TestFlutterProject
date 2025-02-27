@@ -34,6 +34,15 @@ jobs:
       echo "##vso[task.prependpath]$PWD/flutter/bin"
     displayName: 'Install Flutter'
 
+  # Set JAVA_HOME to Java 8 for Android SDK commands
+  - script: |
+      echo "Setting JAVA_HOME to Java 8..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
+      echo "JAVA_HOME is set to: $JAVA_HOME"
+      java -version
+    displayName: 'Set JAVA_HOME to Java 8'
+
   # Install Android Emulator and System Images
   - script: |
       echo "Installing Android Emulator and System Images..."
@@ -45,6 +54,8 @@ jobs:
   # Accept Android SDK Licenses
   - script: |
       echo "Accepting Android SDK licenses..."
+      export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      echo "##vso[task.prependpath]$JAVA_HOME/bin"
       yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses
     displayName: 'Accept Android SDK Licenses'
 
