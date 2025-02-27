@@ -22,22 +22,13 @@ jobs:
   - script: |
       echo "Setting up Android SDK..."
       export ANDROID_SDK_ROOT=$ANDROID_HOME
-      export ANDROID_AVD_HOME=$HOME/.android/avd
-      mkdir -p $ANDROID_HOME
-      wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O android-sdk.zip
-      unzip android-sdk.zip -d $ANDROID_HOME/cmdline-tools
-      mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-      rm android-sdk.zip
-      yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME --install "platform-tools" "platforms;android-30" "build-tools;30.0.3" "emulator" "system-images;android-30;google_apis_playstore;x86_64"
-      echo "##vso[task.prependpath]$ANDROID_HOME/platform-tools"
-      echo "##vso[task.prependpath]$ANDROID_HOME/emulator"
-    displayName: 'Install Android SDK and Tools'
+      export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
 
-  # Install missing dependencies for the Android Emulator
-  - script: |
-      sudo apt-get update -y
-      sudo apt-get install -y libglu1-mesa libpulse0 libxcb-xinerama0
-    displayName: 'Install Dependencies for Emulator'
+      # Install required SDK components
+      yes | sdkmanager --licenses
+      sdkmanager --install "platform-tools" "platforms;android-30" "build-tools;30.0.3" "cmdline-tools;latest" "emulator" "system-images;android-30;google_apis_playstore;x86_64"
+
+    displayName: 'Install Android SDK and Tools'
 
   # Verify Android SDK installation
   - script: |
@@ -48,7 +39,7 @@ jobs:
 
   # Install Flutter dependencies
   - script: |
-      cd myflutterapp  # Ensure correct project directory
+      cd myflutterapp
       flutter pub get
     displayName: 'Install Dependencies'
 
@@ -64,11 +55,28 @@ jobs:
       flutter test test/ --machine > test-results.json
     displayName: 'Run Widget Tests'
 
+  # Install dependencies for the emulator
   - script: |
-      echo "y" | $ANDROID_HOME/tools/bin/sdkmanager --install "system-images;android-30;google_apis;x86"
-      echo "no" | $ANDROID_HOME/tools/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86" -d pixel
-      $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window &
-      $ANDROID_HOME/platform-tools/adb wait-for-device
+      sudo apt-get update -y
+      sudo apt-get install -y libglu1-mesa libpulse0
+    displayName: 'Install Dependencies for Emulator'
+
+  # Create and start Android Emulator
+  - script: |
+      echo "Creating Android Emulator..."
+      export ANDROID_AVD_HOME=$HOME/.android/avd
+      echo "no" | avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis_playstore;x86_64" -d pixel --force
+
+      echo "Starting ADB Server..."
+      adb start-server
+
+      echo "Starting Android Emulator..."
+      nohup emulator -avd test_emulator -no-window -noaudio -no-boot-anim -gpu swiftshader_indirect -no-snapshot-load -partition-size 2048 -qemu > /dev/null 2>&1 &
+
+      echo "Waiting for emulator to fully boot..."
+      timeout 300 bash -c 'until adb shell getprop sys.boot_completed | grep -m 1 "1"; do sleep 5; done'
+
+      adb devices
     displayName: 'Start Android Emulator'
 
   # Run Android Integration Tests
