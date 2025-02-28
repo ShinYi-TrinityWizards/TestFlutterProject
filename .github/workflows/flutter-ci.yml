@@ -1,0 +1,115 @@
+name: Flutter CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Widget Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Widget Tests and Generate Report
+        run: flutter test --machine > test-results/widget-test.json
+
+      - name: Convert JSON Report to JUnit XML
+        run: cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
+        continue-on-error: true  # Prevents failure if conversion fails
+
+      - name: Upload Test Report (Widget Tests)
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-test-report
+          path: test-results/widget-test.xml
+
+  integration_test_android:
+    name: Run Integration Tests on Android
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Start Android Emulator
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          arch: x86_64
+          profile: pixel_6
+          script: adb devices
+
+      - name: Run Integration Tests and Generate Report
+        run: flutter test integration_test/ --machine > test-results/android-integration.json
+
+      - name: Convert JSON Report to JUnit XML
+        run: cat test-results/android-integration.json | tojunit > test-results/android-integration.xml
+        continue-on-error: true
+
+      - name: Upload Test Report (Android Integration)
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-integration-test-report
+          path: test-results/android-integration.xml
+
+  integration_test_ios:
+    name: Run Integration Tests on iOS
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Set Up Xcode
+        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+
+      - name: Start iOS Simulator
+        run: |
+          sudo xcrun simctl boot "iPhone 14"
+
+      - name: Run Integration Tests and Generate Report
+        run: flutter test integration_test/ --machine > test-results/ios-integration.json
+
+      - name: Convert JSON Report to JUnit XML
+        run: cat test-results/ios-integration.json | tojunit > test-results/ios-integration.xml
+        continue-on-error: true
+
+      - name: Upload Test Report (iOS Integration)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-integration-test-report
+          path: test-results/ios-integration.xml
