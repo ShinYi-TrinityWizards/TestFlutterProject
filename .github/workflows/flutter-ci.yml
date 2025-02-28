@@ -21,6 +21,7 @@ jobs:
         run: |
             git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
             echo "$HOME/flutter/bin" >> $GITHUB_PATH
+            export PATH="$HOME/flutter/bin:$PATH"
             flutter --version
 
       - name: Install Dependencies
