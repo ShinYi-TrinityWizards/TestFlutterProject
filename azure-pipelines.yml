@@ -83,10 +83,10 @@ jobs:
       adb kill-server
       adb start-server
 
-      # Start Emulator with hardware acceleration and snapshot
+      # Start Emulator with software rendering and snapshot
       if $ANDROID_HOME/emulator/emulator -list-avds | grep -q "test_emulator"; then
           echo "✅ Emulator found, starting it..."
-          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -snapshot default_boot -gpu host -timezone "America/New_York" -accel on -verbose &
+          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -snapshot default_boot -gpu swiftshader_indirect -timezone "America/New_York" -no-accel -verbose &
 
           sleep 5  # Allow emulator to initialize
 
@@ -115,7 +115,7 @@ jobs:
           echo "✅ Emulator is online!"
 
           # Wait for boot completion
-          TIMEOUT=1200  # 20 minutes
+          TIMEOUT=1800  # 30 minutes
           ELAPSED=0
           while [[ $(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r') != "1" ]]; do
               echo "⌛ Waiting for emulator to fully boot..."
