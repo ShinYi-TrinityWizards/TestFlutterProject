@@ -31,6 +31,7 @@ jobs:
         
       - name: Run Widget Tests and Generate Report
         run: |
+            cd myflutterapp
             mkdir -p test-results
             flutter test --machine > test-results/widget-test.json
         
