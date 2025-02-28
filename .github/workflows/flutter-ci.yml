@@ -17,12 +17,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Flutter Manually
-        run: |
-            git clone https://github.com/flutter/flutter.git --depth 1 --single-branch --branch stable $HOME/flutter
-            echo "$HOME/flutter/bin" >> $GITHUB_PATH
-            export PATH="$HOME/flutter/bin:$PATH"
-            flutter --version
+      - name: Install Flutter
+        uses: subosito/flutter-action@v1
+        with:
+          flutter-version: '1.7.8+hotfix.4'
 
       - name: Install Dependencies
         run: flutter pub get
@@ -31,8 +29,10 @@ jobs:
         run: flutter test --machine > test-results/widget-test.json
 
       - name: Convert JSON Report to JUnit XML
-        run: cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
-        continue-on-error: true  # Prevents failure if conversion fails
+        run: |
+          dart pub global activate junitreport
+          cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
+        continue-on-error: true
 
       - name: Upload Test Report (Widget Tests)
         uses: actions/upload-artifact@v4
@@ -48,11 +48,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Flutter Manually
-        run: |
-            git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter
-            echo "$HOME/flutter/bin" >> $GITHUB_PATH
-            flutter --version
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
 
       - name: Install Dependencies
         run: flutter pub get
@@ -60,7 +59,7 @@ jobs:
       - name: Start Android Emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
-          api-level: 31
+          api-level: 33
           arch: x86_64
           profile: pixel_6
           script: adb devices
@@ -69,7 +68,9 @@ jobs:
         run: flutter test integration_test/ --machine > test-results/android-integration.json
 
       - name: Convert JSON Report to JUnit XML
-        run: cat test-results/android-integration.json | tojunit > test-results/android-integration.xml
+        run: |
+          dart pub global activate junitreport
+          cat test-results/android-integration.json | tojunit > test-results/android-integration.xml
         continue-on-error: true
 
       - name: Upload Test Report (Android Integration)
@@ -86,11 +87,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
+      - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: stable
-          cache: false
 
       - name: Install Dependencies
         run: flutter pub get
@@ -106,7 +106,9 @@ jobs:
         run: flutter test integration_test/ --machine > test-results/ios-integration.json
 
       - name: Convert JSON Report to JUnit XML
-        run: cat test-results/ios-integration.json | tojunit > test-results/ios-integration.xml
+        run: |
+          dart pub global activate junitreport
+          cat test-results/ios-integration.json | tojunit > test-results/ios-integration.xml
         continue-on-error: true
 
       - name: Upload Test Report (iOS Integration)
