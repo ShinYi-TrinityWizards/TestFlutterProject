@@ -86,7 +86,7 @@ jobs:
       # Start Emulator without snapshots (for debugging)
       if $ANDROID_HOME/emulator/emulator -list-avds | grep -q "test_emulator"; then
           echo "✅ Emulator found, starting it..."
-          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -gpu swiftshader_indirect -timezone "America/New_York" -no-snapshot -no-accel -verbose &
+          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -gpu swiftshader_indirect -no-snapshot -no-accel -verbose &
 
           sleep 15  # Allow emulator to initialize
 
