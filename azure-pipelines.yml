@@ -56,7 +56,7 @@ jobs:
 
       # Install Android Emulator and System Images (x86_64)
       echo "Installing Android Emulator and System Images..."
-      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-30;google_apis;x86_64"
+      $CMDLINE_TOOLS/sdkmanager --install "emulator" "system-images;android-33;google_apis;x86_64"
 
       echo "✅ Android Emulator and System Images installed successfully!"
     displayName: 'Install Android Emulator and System Images'
@@ -70,7 +70,7 @@ jobs:
       $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
 
       # Create AVD with x86_64 system image
-      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-30;google_apis;x86_64" -d pixel_4
+      echo "no" | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test_emulator -k "system-images;android-33;google_apis;x86_64" -d pixel_4
 
       # Verify AVD creation
       echo "Listing available AVDs..."
@@ -83,10 +83,10 @@ jobs:
       adb kill-server
       adb start-server
 
-      # Start Emulator
+      # Start Emulator with hardware acceleration and snapshot
       if $ANDROID_HOME/emulator/emulator -list-avds | grep -q "test_emulator"; then
           echo "✅ Emulator found, starting it..."
-          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -no-snapshot-load -gpu swiftshader_indirect -timezone "America/New_York" -no-accel &
+          nohup $ANDROID_HOME/emulator/emulator -avd test_emulator -no-audio -no-window -snapshot default_boot -gpu host -timezone "America/New_York" -accel on -verbose &
 
           sleep 5  # Allow emulator to initialize
 
@@ -115,6 +115,8 @@ jobs:
           echo "✅ Emulator is online!"
 
           # Wait for boot completion
+          TIMEOUT=1200  # 20 minutes
+          ELAPSED=0
           while [[ $(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r') != "1" ]]; do
               echo "⌛ Waiting for emulator to fully boot..."
               sleep 10
