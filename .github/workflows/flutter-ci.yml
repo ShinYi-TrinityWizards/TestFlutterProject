@@ -37,8 +37,12 @@ jobs:
         
       - name: Convert JSON Report to JUnit XML
         run: |
+            if [ -f test-results/widget-test.json ]; then
             dart pub global activate junitreport
             cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
+            else
+            echo "Test results JSON not found. Skipping conversion."
+            fi
         continue-on-error: true
         
       - name: Upload Test Report (Widget Tests)
@@ -130,6 +134,7 @@ jobs:
 
       - name: Run Integration Tests and Generate Report
         run: |
+            cd myflutterapp
             mkdir -p test-results
             flutter test integration_test/ --machine > test-results/ios-integration.json
 
