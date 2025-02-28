@@ -30,19 +30,22 @@ jobs:
             flutter pub get
         
       - name: Run Widget Tests and Generate Report
-        run: flutter test --machine > test-results/widget-test.json
-
+        run: |
+            mkdir -p test-results
+            flutter test --machine > test-results/widget-test.json
+        
       - name: Convert JSON Report to JUnit XML
         run: |
-          dart pub global activate junitreport
-          cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
+            dart pub global activate junitreport
+            cat test-results/widget-test.json | tojunit > test-results/widget-test.xml
         continue-on-error: true
-
+        
       - name: Upload Test Report (Widget Tests)
         uses: actions/upload-artifact@v4
         with:
-          name: widget-test-report
-          path: test-results/widget-test.xml
+            name: widget-test-report
+            path: test-results/widget-test.xml
+          
 
   integration_test_android:
     name: Run Integration Tests on Android
@@ -73,7 +76,9 @@ jobs:
           script: adb devices
 
       - name: Run Integration Tests and Generate Report
-        run: flutter test integration_test/ --machine > test-results/android-integration.json
+        run: |
+            mkdir -p test-results
+            flutter test integration_test/ --machine > test-results/android-integration.json
 
       - name: Convert JSON Report to JUnit XML
         run: |
@@ -112,10 +117,13 @@ jobs:
 
       - name: Start iOS Simulator
         run: |
-          sudo xcrun simctl boot "iPhone 14"
+            xcrun simctl list devices
+            sudo xcrun simctl boot "iPhone 14 Pro"  # Replace with the correct device name
 
       - name: Run Integration Tests and Generate Report
-        run: flutter test integration_test/ --machine > test-results/ios-integration.json
+        run: |
+            mkdir -p test-results
+            flutter test integration_test/ --machine > test-results/ios-integration.json
 
       - name: Convert JSON Report to JUnit XML
         run: |
